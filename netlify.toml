@@ -1,0 +1,12 @@
+[build]
+  base = "tax-chat-frontend"
+  command = "CI= npm run build"
+  publish = "build"
+
+[build.environment]
+  CI = ""
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

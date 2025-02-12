@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, startTransition } from 'react';
 import { Send, Plus, MoreVertical } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import API_URL from '../config';
