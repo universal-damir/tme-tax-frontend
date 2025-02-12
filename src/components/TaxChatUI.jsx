@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, startTransition } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Send, MoreVertical } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import API_URL from '../config';
@@ -13,10 +13,10 @@ const TaxChatUI = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [streamedMessage, setStreamedMessage] = useState('');
+  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
-  // Existing functionality remains the same
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -44,9 +44,11 @@ const TaxChatUI = () => {
     setInput('');
     setIsLoading(true);
     setStreamedMessage('');
+    setError(null);
   
     try {
-      const response = await fetch('http://localhost:3000/api/chat', {
+      // Use the API_URL from config instead of hardcoded localhost
+      const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -55,10 +57,16 @@ const TaxChatUI = () => {
           message: input,
           history: messages
         }),
+        // Add credentials if needed for production
+        credentials: 'include'
       });
   
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error('ReadableStream not supported');
       }
   
       const reader = response.body.getReader();
@@ -87,6 +95,7 @@ const TaxChatUI = () => {
             }
           } catch (e) {
             console.error('Error parsing SSE data:', e);
+            setError('Error processing response');
           }
         });
       };
@@ -100,9 +109,10 @@ const TaxChatUI = () => {
       }
     } catch (error) {
       console.error('Error:', error);
+      setError(error.message);
       setMessages(prevMessages => [...prevMessages, {
         sender: 'assistant',
-        text: "I apologize, but I encountered an error processing your request. Please try again."
+        text: "I apologize, but I encountered an error processing your request. Please try again later or contact support if the problem persists."
       }]);
     } finally {
       setIsLoading(false);
@@ -124,9 +134,7 @@ const TaxChatUI = () => {
 
   return (
     <div className="flex h-screen bg-white">
-      {/* Main Content */}
       <div className="flex-1 flex flex-col bg-white">
-        {/* Header */}
         <div className="border-b px-4 py-3 flex items-center justify-between bg-white">
           <h1 className="text-lg font-medium text-gray-800">TME Services Virtual Tax Assistant</h1>
           <button className="md:hidden p-2 hover:bg-gray-100 rounded-md">
@@ -134,7 +142,6 @@ const TaxChatUI = () => {
           </button>
         </div>
 
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto bg-white">
           <div className="max-w-2xl mx-auto px-4 py-6">
             {messages.map((message, index) => (
@@ -159,11 +166,15 @@ const TaxChatUI = () => {
                 </div>
               </div>
             )}
+            {error && (
+              <div className="mb-6 px-4 py-2 bg-red-50 text-red-600 rounded">
+                {error}
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
         </div>
 
-        {/* Input Area */}
         <div className="border-t bg-white p-4">
           <div className="max-w-2xl mx-auto">
             <div className="relative flex items-center rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -175,14 +186,15 @@ const TaxChatUI = () => {
                 placeholder="Message UAE Tax Assistant..."
                 className="flex-1 px-4 py-3 bg-transparent focus:outline-none resize-none overflow-hidden"
                 rows="1"
+                disabled={isLoading}
               />
               <button
                 onClick={handleSend}
                 disabled={isLoading || !input.trim()}
                 className={`p-2 mx-2 rounded-lg transition-colors ${
-                  input.trim()
+                  input.trim() && !isLoading
                     ? 'text-white bg-gray-900 hover:bg-gray-700'
-                    : 'text-gray-300'
+                    : 'text-gray-300 bg-gray-100'
                 }`}
               >
                 <Send className="w-4 h-4" />
