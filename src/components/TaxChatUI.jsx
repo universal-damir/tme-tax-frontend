@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Plus, MoreVertical } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import API_URL from '../config';
 
 const TaxChatUI = () => {
   const [messages, setMessages] = useState([
@@ -45,7 +46,7 @@ const TaxChatUI = () => {
     setStreamedMessage('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/chat', {
+      const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
