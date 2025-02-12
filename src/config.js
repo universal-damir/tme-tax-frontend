@@ -3,7 +3,7 @@ const getApiUrl = () => {
     if (process.env.NODE_ENV === 'development') {
       return 'http://localhost:3000';
     }
-    return process.env.REACT_APP_API_URL || 'https://your-railway-url.railway.app';
+    return process.env.REACT_APP_API_URL || 'https://tme-tax-backend-production.up.railway.app';
   };
   
   const API_URL = getApiUrl();
