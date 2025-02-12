@@ -47,6 +47,8 @@ const TaxChatUI = () => {
     setError(null);
   
     try {
+      console.log('Sending request to:', `${API_URL}/api/chat`);
+      
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
@@ -58,14 +60,15 @@ const TaxChatUI = () => {
             sender: msg.sender,
             text: msg.text
           }))
-        }),
-        credentials: 'omit' // Changed from 'include' to 'omit' since we don't need credentials
+        })
       });
   
       if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
+        const errorData = await response.text();
+        console.error('Server error:', response.status, errorData);
+        throw new Error(`Server error: ${response.status}. ${errorData}`);
       }
-
+  
       if (!response.body) {
         throw new Error('ReadableStream not supported');
       }
@@ -74,15 +77,20 @@ const TaxChatUI = () => {
       const decoder = new TextDecoder();
       let accumulatedMessage = '';
       
-      const processText = (text) => {
-        const lines = text.split('\n');
-        lines.forEach(line => {
-          if (line.trim() === '') return;
-          
-          // Remove 'data: ' prefix if it exists
-          const jsonStr = line.startsWith('data: ') ? line.slice(5) : line;
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        console.log('Received chunk:', chunk); // Debug log
+        
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.trim() === '') continue;
           
           try {
+            // Remove 'data: ' prefix if it exists
+            const jsonStr = line.startsWith('data: ') ? line.slice(5) : line;
             const data = JSON.parse(jsonStr);
             
             if (data.type === 'content') {
@@ -100,22 +108,14 @@ const TaxChatUI = () => {
           } catch (e) {
             console.error('Error parsing SSE data:', e, 'Line:', line);
           }
-        });
-      };
-  
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value, { stream: true });
-        processText(chunk);
+        }
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Chat error:', error);
       setError(error.message);
       setMessages(prevMessages => [...prevMessages, {
         sender: 'assistant',
-        text: "I apologize, but I encountered an error processing your request. Please try again later or contact support if the problem persists."
+        text: "I apologize, but I encountered an error. Please try again or contact support if the issue persists."
       }]);
     } finally {
       setIsLoading(false);
@@ -130,28 +130,28 @@ const TaxChatUI = () => {
   };
 
   const MessageContent = ({ text }) => (
-    <div className="prose prose-sm max-w-none dark:prose-invert">
+    <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-800">
       <ReactMarkdown>{text}</ReactMarkdown>
     </div>
   );
 
   return (
     <div className="flex h-screen bg-white">
-      <div className="flex-1 flex flex-col bg-white">
-        <div className="border-b px-4 py-3 flex items-center justify-between bg-white">
-          <h1 className="text-lg font-medium text-gray-800">TME Services Virtual Tax Assistant</h1>
+      <div className="flex-1 flex flex-col">
+        <div className="border-b px-4 py-3 flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-gray-900">TME Services Virtual Tax Assistant</h1>
           <button className="md:hidden p-2 hover:bg-gray-100 rounded-md">
             <MoreVertical className="w-5 h-5 text-gray-600" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-white">
+        <div className="flex-1 overflow-y-auto">
           <div className="max-w-2xl mx-auto px-4 py-6">
             {messages.map((message, index) => (
               <div key={index} className="mb-6">
-                <div className={`flex ${message.sender === 'assistant' ? 'bg-gray-50' : 'bg-white'} py-6 px-4`}>
-                  <div className="max-w-2xl mx-auto">
-                    <div className={`text-gray-800 prose`}>
+                <div className={`flex ${message.sender === 'assistant' ? 'bg-blue-50' : 'bg-white'} rounded-lg py-4 px-6`}>
+                  <div className="w-full">
+                    <div className="text-gray-900">
                       <MessageContent text={message.text} />
                     </div>
                   </div>
@@ -160,9 +160,9 @@ const TaxChatUI = () => {
             ))}
             {streamedMessage && (
               <div className="mb-6">
-                <div className="flex bg-gray-50 py-6 px-4">
-                  <div className="max-w-2xl mx-auto">
-                    <div className="text-gray-800 prose">
+                <div className="flex bg-blue-50 rounded-lg py-4 px-6">
+                  <div className="w-full">
+                    <div className="text-gray-900">
                       <MessageContent text={streamedMessage} />
                     </div>
                   </div>
@@ -170,7 +170,7 @@ const TaxChatUI = () => {
               </div>
             )}
             {error && (
-              <div className="mb-6 px-4 py-2 bg-red-50 text-red-600 rounded">
+              <div className="mb-6 px-4 py-2 bg-red-100 text-red-700 rounded-lg">
                 {error}
               </div>
             )}
@@ -178,9 +178,9 @@ const TaxChatUI = () => {
           </div>
         </div>
 
-        <div className="border-t bg-white p-4">
+        <div className="border-t p-4">
           <div className="max-w-2xl mx-auto">
-            <div className="relative flex items-center rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="relative flex items-center rounded-xl border border-gray-300 bg-white shadow-sm">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -196,14 +196,14 @@ const TaxChatUI = () => {
                 disabled={isLoading || !input.trim()}
                 className={`p-2 mx-2 rounded-lg transition-colors ${
                   input.trim() && !isLoading
-                    ? 'text-white bg-gray-900 hover:bg-gray-700'
-                    : 'text-gray-300 bg-gray-100'
+                    ? 'text-white bg-blue-600 hover:bg-blue-700'
+                    : 'text-gray-400 bg-gray-100'
                 }`}
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-xs text-center text-gray-500 mt-2">
+            <p className="text-xs text-center text-gray-600 mt-2">
               TME Services Virtual Assistant can make mistakes. Verify important information with our tax consultants.
             </p>
           </div>
