@@ -47,7 +47,6 @@ const TaxChatUI = () => {
     setError(null);
   
     try {
-      // Use the API_URL from config instead of hardcoded localhost
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
@@ -55,10 +54,12 @@ const TaxChatUI = () => {
         },
         body: JSON.stringify({
           message: input,
-          history: messages
+          history: messages.map(msg => ({
+            sender: msg.sender,
+            text: msg.text
+          }))
         }),
-        // Add credentials if needed for production
-        credentials: 'include'
+        credentials: 'omit' // Changed from 'include' to 'omit' since we don't need credentials
       });
   
       if (!response.ok) {
@@ -76,10 +77,13 @@ const TaxChatUI = () => {
       const processText = (text) => {
         const lines = text.split('\n');
         lines.forEach(line => {
-          if (line.trim() === '' || !line.startsWith('data: ')) return;
+          if (line.trim() === '') return;
+          
+          // Remove 'data: ' prefix if it exists
+          const jsonStr = line.startsWith('data: ') ? line.slice(5) : line;
           
           try {
-            const data = JSON.parse(line.slice(5));
+            const data = JSON.parse(jsonStr);
             
             if (data.type === 'content') {
               accumulatedMessage += data.content || '';
@@ -94,8 +98,7 @@ const TaxChatUI = () => {
               setStreamedMessage('');
             }
           } catch (e) {
-            console.error('Error parsing SSE data:', e);
-            setError('Error processing response');
+            console.error('Error parsing SSE data:', e, 'Line:', line);
           }
         });
       };
