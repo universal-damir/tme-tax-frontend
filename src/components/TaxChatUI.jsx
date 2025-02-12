@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, startTransition } from 'react';
-import { Send, Plus, MoreVertical } from 'lucide-react';
+import { Send, MoreVertical } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import API_URL from '../config';
 
@@ -39,14 +39,14 @@ const TaxChatUI = () => {
       sender: 'user',
       text: input
     };
-
+  
     setMessages(prevMessages => [...prevMessages, userMessage]);
     setInput('');
     setIsLoading(true);
     setStreamedMessage('');
-
+  
     try {
-      const response = await fetch(`${API_URL}/api/chat`, {
+      const response = await fetch('http://localhost:3000/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,24 +56,19 @@ const TaxChatUI = () => {
           history: messages
         }),
       });
-
+  
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
+  
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let accumulatedMessage = '';
       
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.trim() === '' || !line.startsWith('data: ')) continue;
+      const processText = (text) => {
+        const lines = text.split('\n');
+        lines.forEach(line => {
+          if (line.trim() === '' || !line.startsWith('data: ')) return;
           
           try {
             const data = JSON.parse(line.slice(5));
@@ -93,7 +88,15 @@ const TaxChatUI = () => {
           } catch (e) {
             console.error('Error parsing SSE data:', e);
           }
-        }
+        });
+      };
+  
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        processText(chunk);
       }
     } catch (error) {
       console.error('Error:', error);
