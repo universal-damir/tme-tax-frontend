@@ -186,7 +186,7 @@ const TaxChatUI = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Message UAE Tax Assistant..."
+                placeholder="Message TME Tax Assistant..."
                 className="flex-1 px-4 py-3 bg-transparent focus:outline-none resize-none overflow-hidden"
                 rows="1"
                 disabled={isLoading}
