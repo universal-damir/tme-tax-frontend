@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, MoreVertical } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import API_URL from '../config';
+import { API_URL, checkAPIHealth } from '../config';
 
 const TaxChatUI = () => {
   const [messages, setMessages] = useState([
