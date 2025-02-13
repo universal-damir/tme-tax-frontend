@@ -16,6 +16,7 @@ const TaxChatUI = () => {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const [waitingForFirstToken, setWaitingForFirstToken] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -45,6 +46,7 @@ const TaxChatUI = () => {
     setIsLoading(true);
     setStreamedMessage('');
     setError(null);
+    setWaitingForFirstToken(true);
   
     try {
       const response = await fetch(`${API_URL}/api/chat`, {
@@ -87,6 +89,7 @@ const TaxChatUI = () => {
             const data = JSON.parse(jsonStr);
             
             if (data.type === 'content') {
+              setWaitingForFirstToken(false);
               accumulatedMessage += data.content || '';
               setStreamedMessage(accumulatedMessage);
             } else if (data.type === 'error') {
@@ -112,6 +115,7 @@ const TaxChatUI = () => {
         }
       }
     } catch (error) {
+      setWaitingForFirstToken(false);
       console.error('Chat error:', error);
       setError('Failed to send message. Please try again.');
       setMessages(prev => [...prev, {
@@ -130,6 +134,17 @@ const TaxChatUI = () => {
     }
   };
 
+  const handleNewChat = () => {
+    setMessages([{
+      sender: 'assistant',
+      text: "## Welcome to TME Services Virtual Tax Assistant\n\nI'm here to help you with questions about UAE tax.\n\nHow can I assist you today?"
+    }]);
+    setInput('');
+    setStreamedMessage('');
+    setError(null);
+    setWaitingForFirstToken(false);
+  };
+
   const MessageContent = ({ text }) => (
     <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-800">
       <ReactMarkdown>{text}</ReactMarkdown>
@@ -141,9 +156,17 @@ const TaxChatUI = () => {
       <div className="flex-1 flex flex-col">
         <div className="border-b px-4 py-3 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-gray-900">TME Services Virtual Tax Assistant</h1>
-          <button className="md:hidden p-2 hover:bg-gray-100 rounded-md">
-            <MoreVertical className="w-5 h-5 text-gray-600" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleNewChat}
+              className="hidden md:flex items-center px-3 py-1.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+            >
+              New Chat
+            </button>
+            <button className="md:hidden p-2 hover:bg-gray-100 rounded-md">
+              <MoreVertical className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -159,6 +182,19 @@ const TaxChatUI = () => {
                 </div>
               </div>
             ))}
+            {waitingForFirstToken && (
+              <div className="mb-6">
+                <div className="flex bg-blue-50 rounded-lg py-4 px-6">
+                  <div className="w-full">
+                    <div className="text-gray-900">
+                      <span className="inline-flex items-center">
+                        <span className="animate-pulse">...</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {streamedMessage && (
               <div className="mb-6">
                 <div className="flex bg-blue-50 rounded-lg py-4 px-6">
