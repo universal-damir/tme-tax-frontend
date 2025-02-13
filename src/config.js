@@ -1,6 +1,6 @@
 // src/config.js
 const API_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:3000'
+  ? 'http://localhost:3000'  // Backend port
   : 'https://tme-tax-backend-production.up.railway.app';
 
 export const checkAPIHealth = async () => {
@@ -12,6 +12,7 @@ export const checkAPIHealth = async () => {
         'Content-Type': 'application/json',
       },
       mode: 'cors',
+      credentials: 'omit'
     });
     return response.ok;
   } catch (error) {

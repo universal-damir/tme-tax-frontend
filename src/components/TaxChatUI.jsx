@@ -47,17 +47,13 @@ const TaxChatUI = () => {
     setError(null);
   
     try {
-      console.log('Sending request to:', API_URL + '/api/chat');
-      
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream',
-          'Origin': 'https://taxgpt.netlify.app'
         },
         mode: 'cors',
-        credentials: 'omit',
         body: JSON.stringify({
           message: input,
           history: messages
@@ -111,7 +107,7 @@ const TaxChatUI = () => {
       }
     } catch (error) {
       console.error('Chat error:', error);
-      setError(error.message);
+      setError('Failed to send message. Please try again.');
       setMessages(prev => [...prev, {
         sender: 'assistant',
         text: "I apologize, but I encountered an error. Please try again or contact support if the issue persists."
