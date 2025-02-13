@@ -57,6 +57,7 @@ const TaxChatUI = () => {
           'Origin': 'https://taxgpt.netlify.app'
         },
         mode: 'cors',
+        credentials: 'omit',
         body: JSON.stringify({
           message: input,
           history: messages
