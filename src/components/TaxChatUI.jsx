@@ -90,8 +90,13 @@ const TaxChatUI = () => {
               accumulatedMessage += data.content || '';
               setStreamedMessage(accumulatedMessage);
             } else if (data.type === 'error') {
-              setError(data.error || 'An error occurred');
-              setStreamedMessage('');
+              console.error('Server error:', data);
+              const errorMessage = data.error || 'An unexpected error occurred';
+              setError(errorMessage);
+              setMessages(prev => [...prev, {
+                sender: 'assistant',
+                text: `I apologize, but I encountered an error: ${errorMessage}. Please try again or contact support if the issue persists.`
+              }]);
               break;
             } else if (data.type === 'done') {
               setMessages(prevMessages => [...prevMessages, {
