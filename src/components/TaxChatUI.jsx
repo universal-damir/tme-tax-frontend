@@ -77,14 +77,12 @@ const TaxChatUI = () => {
         if (done) break;
         
         const chunk = decoder.decode(value, { stream: true });
-        console.log('Received chunk:', chunk); // Debug log
-        
         const lines = chunk.split('\n');
+        
         for (const line of lines) {
           if (line.trim() === '') continue;
           
           try {
-            // Remove 'data: ' prefix if it exists
             const jsonStr = line.startsWith('data: ') ? line.slice(5) : line;
             const data = JSON.parse(jsonStr);
             
@@ -92,7 +90,9 @@ const TaxChatUI = () => {
               accumulatedMessage += data.content || '';
               setStreamedMessage(accumulatedMessage);
             } else if (data.type === 'error') {
-              throw new Error(data.message || data.error);
+              setError(data.error || 'An error occurred');
+              setStreamedMessage('');
+              break;
             } else if (data.type === 'done') {
               setMessages(prevMessages => [...prevMessages, {
                 sender: 'assistant',
@@ -100,8 +100,9 @@ const TaxChatUI = () => {
               }]);
               setStreamedMessage('');
             }
-          } catch (e) {
-            console.error('Error parsing SSE data:', e, 'Line:', line);
+          } catch (parseError) {
+            console.warn('Error parsing SSE data:', parseError, 'Line:', line);
+            continue;
           }
         }
       }
