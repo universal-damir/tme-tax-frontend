@@ -1,6 +1,7 @@
 // src/components/LoginPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../config';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -16,26 +17,31 @@ const LoginPage = () => {
     }
   }, [navigate]);
 
-  const validateCredentials = (username, password) => {
-    // Simple direct comparison for now
-    return username === 'tmetaxation' && password === '100%TME-25';
-  };
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const isValid = validateCredentials(username, password);
+      const response = await fetch(`${API_URL}/api/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password
+        })
+      });
 
-      if (isValid) {
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('loginTime', Date.now().toString());
         navigate('/chat');
       } else {
-        setError('Invalid username or password');
+        setError(data.message || 'Invalid username or password');
       }
     } catch (err) {
       console.error('Login error:', err);
