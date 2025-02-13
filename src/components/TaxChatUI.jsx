@@ -40,34 +40,31 @@ const TaxChatUI = () => {
       text: input
     };
   
-    setMessages(prevMessages => [...prevMessages, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
     setStreamedMessage('');
     setError(null);
   
     try {
-      console.log('Sending request to:', `${API_URL}/api/chat`);
+      console.log('Sending request to:', API_URL + '/api/chat');
       
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream',
+          'Origin': 'https://taxgpt.netlify.app'
         },
+        mode: 'cors',
         body: JSON.stringify({
           message: input,
-          history: messages.map(msg => ({
-            sender: msg.sender,
-            text: msg.text
-          }))
+          history: messages
         })
       });
   
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Server error:', response.status, errorData);
-        throw new Error(`Server error: ${response.status}. ${errorData}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
   
       if (!response.body) {
@@ -114,7 +111,7 @@ const TaxChatUI = () => {
     } catch (error) {
       console.error('Chat error:', error);
       setError(error.message);
-      setMessages(prevMessages => [...prevMessages, {
+      setMessages(prev => [...prev, {
         sender: 'assistant',
         text: "I apologize, but I encountered an error. Please try again or contact support if the issue persists."
       }]);
