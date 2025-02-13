@@ -53,7 +53,9 @@ const TaxChatUI = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
         },
+        credentials: 'include',
         body: JSON.stringify({
           message: input,
           history: messages.map(msg => ({
