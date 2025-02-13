@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, MoreVertical } from 'lucide-react';
+import { Send, MoreVertical, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import API_URL from '../config';
+
+// Assuming you have an environment variable set up for the API URL
+const API_URL = process.env.REACT_APP_API_URL || 'https://tme-tax-backend-production.up.railway.app';
 
 const TaxChatUI = () => {
   const [messages, setMessages] = useState([
@@ -14,9 +16,11 @@ const TaxChatUI = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [streamedMessage, setStreamedMessage] = useState('');
   const [error, setError] = useState(null);
+  const [isConnected, setIsConnected] = useState(true);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
+  // Auto-scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -25,6 +29,7 @@ const TaxChatUI = () => {
     scrollToBottom();
   }, [messages, streamedMessage]);
 
+  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'inherit';
@@ -32,12 +37,30 @@ const TaxChatUI = () => {
     }
   }, [input]);
 
+  // Check connection status
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/health`);
+        setIsConnected(response.ok);
+      } catch (error) {
+        console.error('Connection check failed:', error);
+        setIsConnected(false);
+      }
+    };
+
+    checkConnection();
+    const interval = setInterval(checkConnection, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
     
     const userMessage = {
       sender: 'user',
-      text: input
+      text: input.trim()
     };
   
     setMessages(prev => [...prev, userMessage]);
@@ -47,19 +70,16 @@ const TaxChatUI = () => {
     setError(null);
   
     try {
-      console.log('Sending request to:', API_URL + '/api/chat');
-      
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'text/event-stream',
-          'Origin': 'https://taxgpt.netlify.app'
+          'Accept': 'text/event-stream'
         },
         mode: 'cors',
         credentials: 'omit',
         body: JSON.stringify({
-          message: input,
+          message: userMessage.text,
           history: messages
         })
       });
@@ -81,14 +101,12 @@ const TaxChatUI = () => {
         if (done) break;
         
         const chunk = decoder.decode(value, { stream: true });
-        console.log('Received chunk:', chunk); // Debug log
-        
         const lines = chunk.split('\n');
+        
         for (const line of lines) {
           if (line.trim() === '') continue;
           
           try {
-            // Remove 'data: ' prefix if it exists
             const jsonStr = line.startsWith('data: ') ? line.slice(5) : line;
             const data = JSON.parse(jsonStr);
             
@@ -100,7 +118,8 @@ const TaxChatUI = () => {
             } else if (data.type === 'done') {
               setMessages(prevMessages => [...prevMessages, {
                 sender: 'assistant',
-                text: accumulatedMessage
+                text: accumulatedMessage,
+                sources: data.sources
               }]);
               setStreamedMessage('');
             }
@@ -128,11 +147,34 @@ const TaxChatUI = () => {
     }
   };
 
-  const MessageContent = ({ text }) => (
+  const MessageContent = ({ text, sources }) => (
     <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-800">
       <ReactMarkdown>{text}</ReactMarkdown>
+      {sources && sources.length > 0 && (
+        <div className="text-xs text-gray-500 mt-2">
+          Sources: {sources.join(', ')}
+        </div>
+      )}
     </div>
   );
+
+  if (!isConnected) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-lg">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Connection Error</h2>
+          <p className="text-gray-600">Unable to connect to the server. Please check your internet connection and try again.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-white">
