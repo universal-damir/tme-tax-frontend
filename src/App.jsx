@@ -1,24 +1,27 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import TaxChatUI from './components/TaxChatUI';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
+import TaxChatUI from './components/TaxChatUI';
 import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
 
 const App = () => {
     return (
-        <Router>
-            <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route
-                    path="/"
-                    element={
-                        <ProtectedRoute>
-                            <TaxChatUI />
-                        </ProtectedRoute>
-                    }
-                />
-            </Routes>
-        </Router>
+        <AuthProvider>
+            <Router basename="/tme-tax-frontend">
+                <Routes>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route
+                        path="/"
+                        element={
+                            <ProtectedRoute>
+                                <TaxChatUI />
+                            </ProtectedRoute>
+                        }
+                    />
+                </Routes>
+            </Router>
+        </AuthProvider>
     );
 };
 
