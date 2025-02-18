@@ -1,0 +1,36 @@
+name: Deploy Test Environment
+
+on:
+  push:
+    branches:
+      - test-deployment
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Create env file
+        run: |
+          echo "VITE_API_URL=https://tme-tax-backend-production.up.railway.app" > .env
+          echo "REACT_APP_ENV=test" >> .env
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build
+          branch: gh-pages-test 
