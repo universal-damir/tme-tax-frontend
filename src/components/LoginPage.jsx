@@ -22,20 +22,24 @@ const LoginPage = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Origin': window.location.origin
                 },
+                credentials: 'include',
                 body: JSON.stringify({ username, password }),
             });
 
-            const data = await response.json();
-
             if (!response.ok) {
-                throw new Error(data.error || 'Login failed');
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.error || 'Login failed. Please check your credentials.');
             }
 
+            const data = await response.json();
             login(data.token, data.username);
             navigate('/');
         } catch (error) {
-            setError(error.message);
+            console.error('Login error:', error);
+            setError(error.message || 'Failed to connect to the server. Please try again.');
         } finally {
             setIsLoading(false);
         }

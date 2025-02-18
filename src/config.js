@@ -7,8 +7,10 @@ export const checkAPIHealth = async () => {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
+        'Origin': window.location.origin
       },
-      mode: 'cors',
+      credentials: 'include',
+      mode: 'cors'
     });
     
     console.log('Health check response:', {
