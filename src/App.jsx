@@ -8,7 +8,7 @@ import { AuthProvider } from './context/AuthContext';
 const App = () => {
     return (
         <AuthProvider>
-            <Router basename="/tme-tax-frontend">
+            <Router>
                 <Routes>
                     <Route path="/login" element={<LoginPage />} />
                     <Route
