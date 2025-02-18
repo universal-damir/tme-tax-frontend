@@ -22,10 +22,8 @@ const LoginPage = () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'Origin': window.location.origin
+                    'Accept': 'application/json'
                 },
-                credentials: 'include',
                 body: JSON.stringify({ username, password }),
             });
 

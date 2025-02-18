@@ -6,11 +6,8 @@ export const checkAPIHealth = async () => {
     const response = await fetch(`${API_URL}/api/health`, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
-        'Origin': window.location.origin
-      },
-      credentials: 'include',
-      mode: 'cors'
+        'Accept': 'application/json'
+      }
     });
     
     console.log('Health check response:', {
