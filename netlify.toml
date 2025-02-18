@@ -1,8 +1,18 @@
 [build]
-  command = "npm run build"
+  command = "CI=false npm run build"
   publish = "build"
+
+[build.environment]
+  REACT_APP_API_URL = "https://tme-tax-backend-production.up.railway.app"
+  REACT_APP_ENV = "test"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
-  status = 200 
+  status = 200
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Content-Type = "application/json"
+    Access-Control-Allow-Origin = "*" 
