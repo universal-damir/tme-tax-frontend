@@ -2,6 +2,7 @@
   "name": "tax-chat-frontend",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://universal-damir.github.io/tme-tax-frontend",
   "dependencies": {
     "@tailwindcss/typography": "^0.5.16",
     "cra-template": "1.2.0",
