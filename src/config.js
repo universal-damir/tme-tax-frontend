@@ -1,16 +1,13 @@
 // src/config.js
-export const API_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:3000'
-  : 'https://tme-tax-backend-production.up.railway.app';
+export const API_URL = process.env.REACT_APP_API_URL || 'https://tme-tax-backend-production.up.railway.app';
 
 export const checkAPIHealth = async () => {
   try {
     const response = await fetch(`${API_URL}/api/health`, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
-      },
-      mode: 'cors',
+        'Accept': 'application/json'
+      }
     });
     
     console.log('Health check response:', {

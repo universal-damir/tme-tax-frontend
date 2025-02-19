@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.typing-dots {
+  display: inline-block;
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.typing-dots::after {
+  content: '...';
+  position: absolute;
+  left: 0;
+  animation: typing 1.4s infinite;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: 1px;
+}
+
+@keyframes typing {
+  0% { content: '.'; }
+  33% { content: '..'; }
+  66% { content: '...'; }
+  100% { content: '...'; }
+}
