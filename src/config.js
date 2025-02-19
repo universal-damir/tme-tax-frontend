@@ -9,7 +9,8 @@ export const checkAPIHealth = async () => {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Origin': window.location.origin
       },
       mode: 'cors',
       credentials: 'include'
@@ -27,4 +28,14 @@ export const checkAPIHealth = async () => {
     console.error('API Health check failed:', error);
     return false;
   }
+};
+
+export const defaultFetchOptions = {
+  headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'Origin': window.location.origin
+  },
+  mode: 'cors',
+  credentials: 'include'
 };

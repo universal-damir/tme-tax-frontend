@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { API_URL } from '../config';
+import { API_URL, defaultFetchOptions } from '../config';
 import Sidebar from './Sidebar';
 
 const TaxChatUI = () => {
@@ -35,14 +35,12 @@ const TaxChatUI = () => {
     try {
       const userId = localStorage.getItem('userId') || '1';
       const response = await fetch(`${API_URL}/api/conversations`, {
+        ...defaultFetchOptions,
         method: 'GET',
         headers: {
+          ...defaultFetchOptions.headers,
           'Authorization': userId,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        credentials: 'include',
-        mode: 'cors'
+        }
       });
       
       if (!response.ok) throw new Error('Failed to fetch conversations');
@@ -57,13 +55,8 @@ const TaxChatUI = () => {
   const fetchConversationMessages = async (conversationId) => {
     try {
       const response = await fetch(`${API_URL}/api/conversations/${conversationId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        credentials: 'include',
-        mode: 'cors'
+        ...defaultFetchOptions,
+        method: 'GET'
       });
       
       if (!response.ok) throw new Error('Failed to fetch messages');
