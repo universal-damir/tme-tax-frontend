@@ -1,7 +1,7 @@
 // src/components/LoginPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL } from '../config';
+import { API_URL, defaultFetchOptions } from '../config';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -24,10 +24,8 @@ const LoginPage = () => {
 
     try {
       const response = await fetch(`${API_URL}/api/login`, {
+        ...defaultFetchOptions,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           username,
           password
@@ -38,6 +36,8 @@ const LoginPage = () => {
 
       if (response.ok && data.success) {
         localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('userId', data.userId);
+        localStorage.setItem('username', data.username);
         localStorage.setItem('loginTime', Date.now().toString());
         navigate('/chat');
       } else {
@@ -45,7 +45,7 @@ const LoginPage = () => {
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('An error occurred during login');
+      setError('An error occurred during login. Please try again.');
     } finally {
       setIsLoading(false);
     }

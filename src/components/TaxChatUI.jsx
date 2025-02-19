@@ -54,9 +54,14 @@ const TaxChatUI = () => {
 
   const fetchConversationMessages = async (conversationId) => {
     try {
+      const userId = localStorage.getItem('userId') || '1';
       const response = await fetch(`${API_URL}/api/conversations/${conversationId}`, {
         ...defaultFetchOptions,
-        method: 'GET'
+        method: 'GET',
+        headers: {
+          ...defaultFetchOptions.headers,
+          'Authorization': userId,
+        }
       });
       
       if (!response.ok) throw new Error('Failed to fetch messages');
