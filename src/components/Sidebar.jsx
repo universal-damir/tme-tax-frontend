@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlusCircle, MessageSquare, Trash2, X, PenSquare } from 'lucide-react';
+import { PlusCircle, MessageSquare, Trash2, X, PenSquare, LogOut } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Sidebar = ({
@@ -8,6 +8,7 @@ const Sidebar = ({
   onSelectConversation,
   onDeleteConversation,
   selectedConversationId,
+  onLogout,
   className = ''
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -105,7 +106,7 @@ const Sidebar = ({
                     </h3>
                   </div>
                   <p className="text-xs text-gray-500 truncate">
-                    {format(new Date(conversation.created_at), 'dd.mm.yyyy')}
+                    {format(new Date(conversation.created_at), 'dd.MM.yyyy')}
                   </p>
                 </div>
               </div>
@@ -121,6 +122,20 @@ const Sidebar = ({
               </button>
             </div>
           ))}
+        </div>
+
+        {/* Logout button at the bottom */}
+        <div className="p-4 border-t border-gray-200 mt-auto">
+          <button
+            onClick={() => {
+              onLogout();
+              setIsMobileMenuOpen(false);
+            }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Log Out</span>
+          </button>
         </div>
       </div>
     </>

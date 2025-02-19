@@ -3,8 +3,10 @@ import { Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { API_URL, defaultFetchOptions } from '../config';
 import Sidebar from './Sidebar';
+import { useNavigate } from 'react-router-dom';
 
 const TaxChatUI = () => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([{
     sender: 'assistant',
     text: "## Welcome to TME Services Virtual Tax Assistant\n\nI'm here to help you with questions about UAE tax.\n\nHow can I assist you today?"
@@ -94,8 +96,14 @@ const TaxChatUI = () => {
 
   const handleDeleteConversation = async (conversationId) => {
     try {
+      const userId = localStorage.getItem('userId') || '1';
       const response = await fetch(`${API_URL}/api/conversations/${conversationId}`, {
-        method: 'DELETE'
+        ...defaultFetchOptions,
+        method: 'DELETE',
+        headers: {
+          ...defaultFetchOptions.headers,
+          'Authorization': userId,
+        }
       });
       if (!response.ok) throw new Error('Failed to delete conversation');
       setConversations(prev => prev.filter(conv => conv.id !== conversationId));
@@ -237,6 +245,17 @@ const TaxChatUI = () => {
     </div>
   );
 
+  const handleLogout = () => {
+    // Clear all authentication data
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    localStorage.removeItem('loginTime');
+    
+    // Redirect to login page
+    navigate('/login');
+  };
+
   return (
     <div className="flex h-screen bg-white">
       <Sidebar
@@ -245,6 +264,7 @@ const TaxChatUI = () => {
         onSelectConversation={handleSelectConversation}
         onDeleteConversation={handleDeleteConversation}
         selectedConversationId={selectedConversationId}
+        onLogout={handleLogout}
       />
       
       <div className="flex-1 flex flex-col">
