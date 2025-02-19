@@ -1,15 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, MoreVertical } from 'lucide-react';
+import { Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { API_URL, checkAPIHealth } from '../config';
+import { API_URL } from '../config';
+import Sidebar from './Sidebar';
 
 const TaxChatUI = () => {
-  const [messages, setMessages] = useState([
-    {
-      sender: 'assistant',
-      text: "## Welcome to TME Services Virtual Tax Assistant\n\nI'm here to help you with questions about UAE tax.\n\nHow can I assist you today?"
-    }
-  ]);
+  const [messages, setMessages] = useState([{
+    sender: 'assistant',
+    text: "## Welcome to TME Services Virtual Tax Assistant\n\nI'm here to help you with questions about UAE tax.\n\nHow can I assist you today?"
+  }]);
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [streamedMessage, setStreamedMessage] = useState('');
@@ -17,6 +18,97 @@ const TaxChatUI = () => {
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const [waitingForFirstToken, setWaitingForFirstToken] = useState(false);
+
+  // Fetch conversations on component mount
+  useEffect(() => {
+    fetchConversations();
+  }, []);
+
+  // Fetch messages when conversation is selected
+  useEffect(() => {
+    if (selectedConversationId) {
+      fetchConversationMessages(selectedConversationId);
+    }
+  }, [selectedConversationId]);
+
+  const fetchConversations = async () => {
+    try {
+      const userId = localStorage.getItem('userId') || '1';
+      const response = await fetch(`${API_URL}/api/conversations`, {
+        method: 'GET',
+        headers: {
+          'Authorization': userId,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
+        mode: 'cors'
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch conversations');
+      const data = await response.json();
+      setConversations(data);
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      setError('Failed to load conversations');
+    }
+  };
+
+  const fetchConversationMessages = async (conversationId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/conversations/${conversationId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
+        mode: 'cors'
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch messages');
+      const data = await response.json();
+      setMessages(data.map(msg => ({
+        sender: msg.role,
+        text: msg.content
+      })));
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      setError('Failed to load messages');
+    }
+  };
+
+  const handleNewChat = () => {
+    setSelectedConversationId(null);
+    setMessages([{
+      sender: 'assistant',
+      text: "## Welcome to TME Services Virtual Tax Assistant\n\nI'm here to help you with questions about UAE tax.\n\nHow can I assist you today?"
+    }]);
+    setInput('');
+    setStreamedMessage('');
+    setError(null);
+    setWaitingForFirstToken(false);
+  };
+
+  const handleSelectConversation = (conversation) => {
+    setSelectedConversationId(conversation.id);
+  };
+
+  const handleDeleteConversation = async (conversationId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/conversations/${conversationId}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete conversation');
+      setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+      if (selectedConversationId === conversationId) {
+        handleNewChat();
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      setError('Failed to delete conversation');
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -49,15 +141,18 @@ const TaxChatUI = () => {
     setWaitingForFirstToken(true);
   
     try {
+      const userId = localStorage.getItem('userId') || '1';
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream',
+          'Authorization': userId
         },
         mode: 'cors',
         body: JSON.stringify({
           message: input,
+          conversationId: selectedConversationId,
           history: messages
         })
       });
@@ -88,7 +183,10 @@ const TaxChatUI = () => {
             const jsonStr = line.startsWith('data: ') ? line.slice(5) : line;
             const data = JSON.parse(jsonStr);
             
-            if (data.type === 'content') {
+            if (data.type === 'conversation') {
+              setSelectedConversationId(data.id);
+              fetchConversations(); // Refresh conversation list
+            } else if (data.type === 'content') {
               setWaitingForFirstToken(false);
               accumulatedMessage += data.content || '';
               setStreamedMessage(accumulatedMessage);
@@ -107,6 +205,7 @@ const TaxChatUI = () => {
                 text: accumulatedMessage
               }]);
               setStreamedMessage('');
+              fetchConversations(); // Refresh conversation list
             }
           } catch (parseError) {
             console.warn('Error parsing SSE data:', parseError, 'Line:', line);
@@ -134,17 +233,6 @@ const TaxChatUI = () => {
     }
   };
 
-  const handleNewChat = () => {
-    setMessages([{
-      sender: 'assistant',
-      text: "## Welcome to TME Services Virtual Tax Assistant\n\nI'm here to help you with questions about UAE tax.\n\nHow can I assist you today?"
-    }]);
-    setInput('');
-    setStreamedMessage('');
-    setError(null);
-    setWaitingForFirstToken(false);
-  };
-
   const MessageContent = ({ text }) => (
     <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-800">
       <ReactMarkdown>{text}</ReactMarkdown>
@@ -153,20 +241,17 @@ const TaxChatUI = () => {
 
   return (
     <div className="flex h-screen bg-white">
+      <Sidebar
+        conversations={conversations}
+        onNewChat={handleNewChat}
+        onSelectConversation={handleSelectConversation}
+        onDeleteConversation={handleDeleteConversation}
+        selectedConversationId={selectedConversationId}
+      />
+      
       <div className="flex-1 flex flex-col">
         <div className="border-b px-4 py-3 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-gray-900">TME Services Virtual Tax Assistant</h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleNewChat}
-              className="hidden md:flex items-center px-3 py-1.5 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-            >
-              New Chat
-            </button>
-            <button className="md:hidden p-2 hover:bg-gray-100 rounded-md">
-              <MoreVertical className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
