@@ -1,15 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Upload, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { API_URL, defaultFetchOptions } from '../config';
 import Sidebar from './Sidebar';
+import FileUpload from './FileUpload';
+import DocumentViewer from './DocumentViewer';
 import { useNavigate } from 'react-router-dom';
 
 const TaxChatUI = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([{
     sender: 'assistant',
-    text: "## Welcome to TME Services Virtual Tax Assistant\n\nI'm here to help you with questions about UAE tax.\n\nHow can I assist you today?"
+    text: "## Welcome to TME Services Virtual Tax Assistant\n\nI'm here to help you with questions about UAE tax.\n\nYou can upload PDF, CSV, or Excel files to get personalized tax calculations and advice based on your documents.\n\nHow can I assist you today?"
   }]);
   const [conversations, setConversations] = useState([]);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
@@ -17,6 +19,8 @@ const TaxChatUI = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [streamedMessage, setStreamedMessage] = useState('');
   const [error, setError] = useState(null);
+  const [uploadedDocuments, setUploadedDocuments] = useState([]);
+  const [showFileUpload, setShowFileUpload] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const [waitingForFirstToken, setWaitingForFirstToken] = useState(false);
@@ -82,16 +86,20 @@ const TaxChatUI = () => {
     setSelectedConversationId(null);
     setMessages([{
       sender: 'assistant',
-      text: "## Welcome to TME Services Virtual Tax Assistant\n\nI'm here to help you with questions about UAE tax.\n\nHow can I assist you today?"
+      text: "## Welcome to TME Services Virtual Tax Assistant\n\nI'm here to help you with questions about UAE tax.\n\nYou can upload PDF, CSV, or Excel files to get personalized tax calculations and advice based on your documents.\n\nHow can I assist you today?"
     }]);
     setInput('');
     setStreamedMessage('');
     setError(null);
     setWaitingForFirstToken(false);
+    // Clear uploaded documents since they are conversation-specific
+    setUploadedDocuments([]);
   };
 
   const handleSelectConversation = (conversation) => {
     setSelectedConversationId(conversation.id);
+    // Clear uploaded documents since they are conversation-specific
+    setUploadedDocuments([]);
   };
 
   const handleDeleteConversation = async (conversationId) => {
@@ -113,6 +121,34 @@ const TaxChatUI = () => {
     } catch (error) {
       console.error('Error deleting conversation:', error);
       setError('Failed to delete conversation');
+    }
+  };
+
+  const handleEditConversation = async (conversationId, newTitle) => {
+    try {
+      const userId = localStorage.getItem('userId') || '1';
+      const response = await fetch(`${API_URL}/api/conversations/${conversationId}`, {
+        ...defaultFetchOptions,
+        method: 'PUT',
+        headers: {
+          ...defaultFetchOptions.headers,
+          'Authorization': userId,
+        },
+        body: JSON.stringify({
+          title: newTitle
+        })
+      });
+      if (!response.ok) throw new Error('Failed to update conversation');
+      
+      // Update the conversation in the local state
+      setConversations(prev => prev.map(conv => 
+        conv.id === conversationId 
+          ? { ...conv, title: newTitle }
+          : conv
+      ));
+    } catch (error) {
+      console.error('Error updating conversation:', error);
+      setError('Failed to update conversation title');
     }
   };
 
@@ -256,6 +292,51 @@ const TaxChatUI = () => {
     navigate('/login');
   };
 
+  // File upload handlers
+  const handleUploadSuccess = (fileInfo) => {
+    setUploadedDocuments(prev => [...prev, fileInfo]);
+    setError(null);
+    
+    // Add a message to the chat about the successful upload
+    const uploadMessage = {
+      sender: 'assistant',
+      text: `✅ **Document uploaded successfully!**\n\n**${fileInfo.name}** (${fileInfo.type}) has been processed and is now available for analysis in this conversation. You can ask me questions about this document and I'll use its content to provide more accurate tax advice.\n\n*Note: Documents are specific to this conversation and won't be available in other chats.*`
+    };
+    setMessages(prev => [...prev, uploadMessage]);
+  };
+
+  const handleUploadError = (errorMessage) => {
+    setError(`Upload failed: ${errorMessage}`);
+  };
+
+  const toggleFileUpload = () => {
+    setShowFileUpload(!showFileUpload);
+  };
+
+  // Add this function to create a new conversation and return its id
+  const handleRequireConversation = async () => {
+    try {
+      const userId = localStorage.getItem('userId') || '1';
+      const response = await fetch(`${API_URL}/api/conversations`, {
+        ...defaultFetchOptions,
+        method: 'POST',
+        headers: {
+          ...defaultFetchOptions.headers,
+          'Authorization': userId,
+        },
+        body: JSON.stringify({})
+      });
+      if (!response.ok) throw new Error('Failed to create conversation');
+      const data = await response.json();
+      setSelectedConversationId(data.id);
+      setConversations(prev => [...prev, data]);
+      return data.id;
+    } catch (error) {
+      setError('Failed to create conversation for upload');
+      throw error;
+    }
+  };
+
   return (
     <div className="flex h-screen bg-white">
       <Sidebar
@@ -263,6 +344,7 @@ const TaxChatUI = () => {
         onNewChat={handleNewChat}
         onSelectConversation={handleSelectConversation}
         onDeleteConversation={handleDeleteConversation}
+        onEditConversation={handleEditConversation}
         selectedConversationId={selectedConversationId}
         onLogout={handleLogout}
       />
@@ -270,9 +352,53 @@ const TaxChatUI = () => {
       <div className="flex-1 flex flex-col">
         <div className="border-b px-4 py-3 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-gray-900">TME Services Virtual Tax Assistant</h1>
+          <button
+            onClick={toggleFileUpload}
+            className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-colors
+              ${showFileUpload 
+                ? 'bg-blue-500 text-white border-blue-500' 
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }
+            `}
+            title="Upload documents"
+          >
+            <Upload className="w-4 h-4" />
+            <span className="text-sm font-medium">
+              {showFileUpload ? 'Hide Upload' : 'Upload Files'}
+            </span>
+          </button>
         </div>
 
+        {/* File Upload Section */}
+        {showFileUpload && (
+          <div className="border-b bg-gray-50 p-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="mb-4">
+                <h2 className="text-lg font-medium text-gray-900 mb-2">Document Upload</h2>
+                <p className="text-sm text-gray-600">
+                  Upload your financial documents (PDF, CSV, Excel) to get personalized tax calculations and advice.
+                </p>
+              </div>
+              <FileUpload 
+                onUploadSuccess={handleUploadSuccess}
+                onUploadError={handleUploadError}
+                conversationId={selectedConversationId}
+                onRequireConversation={handleRequireConversation}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto">
+          {/* Document Viewer - Show when documents are uploaded */}
+          {uploadedDocuments.length > 0 && (
+            <div className="bg-blue-50 border-b p-4">
+              <div className="max-w-4xl mx-auto">
+                <DocumentViewer documents={uploadedDocuments} />
+              </div>
+            </div>
+          )}
+
           <div className="max-w-2xl mx-auto px-4 py-6">
             {messages.map((message, index) => (
               <div key={index} className="mb-6">

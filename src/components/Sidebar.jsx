@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PlusCircle, MessageSquare, Trash2, X, PenSquare, LogOut } from 'lucide-react';
+import { PlusCircle, MessageSquare, Trash2, X, PenSquare, LogOut, Edit3, Check } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Sidebar = ({
@@ -7,11 +7,14 @@ const Sidebar = ({
   onNewChat,
   onSelectConversation,
   onDeleteConversation,
+  onEditConversation,
   selectedConversationId,
   onLogout,
   className = ''
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [editingConversationId, setEditingConversationId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -22,6 +25,34 @@ const Sidebar = ({
       onNewChat();
     } else {
       toggleMobileMenu();
+    }
+  };
+
+  const handleStartEdit = (conversation) => {
+    setEditingConversationId(conversation.id);
+    setEditingTitle(conversation.title);
+  };
+
+  const handleSaveEdit = async () => {
+    if (editingTitle.trim() && onEditConversation) {
+      await onEditConversation(editingConversationId, editingTitle.trim());
+    }
+    setEditingConversationId(null);
+    setEditingTitle('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingConversationId(null);
+    setEditingTitle('');
+  };
+
+  const handleEditKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveEdit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelEdit();
     }
   };
 
@@ -85,41 +116,78 @@ const Sidebar = ({
               <div 
                 className="flex-1 min-w-0 cursor-pointer flex items-start gap-3"
                 onClick={() => {
-                  onSelectConversation(conversation);
-                  setIsMobileMenuOpen(false);
+                  if (editingConversationId !== conversation.id) {
+                    onSelectConversation(conversation);
+                    setIsMobileMenuOpen(false);
+                  }
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
+                  if (editingConversationId !== conversation.id && (e.key === 'Enter' || e.key === ' ')) {
                     e.preventDefault();
                     onSelectConversation(conversation);
                     setIsMobileMenuOpen(false);
                   }
                 }}
                 role="button"
-                tabIndex={0}
+                tabIndex={editingConversationId === conversation.id ? -1 : 0}
               >
                 <MessageSquare className="w-5 h-5 mt-1 flex-shrink-0 text-gray-500" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">
-                      {conversation.title}
-                    </h3>
+                    {editingConversationId === conversation.id ? (
+                      <input
+                        type="text"
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onKeyDown={handleEditKeyDown}
+                        onBlur={handleSaveEdit}
+                        className="text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded px-2 py-1 flex-1 min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        autoFocus
+                        aria-label="Edit conversation title"
+                      />
+                    ) : (
+                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                        {conversation.title}
+                      </h3>
+                    )}
                   </div>
                   <p className="text-xs text-gray-500 truncate">
                     {format(new Date(conversation.created_at), 'dd.MM.yyyy')}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteConversation(conversation.id);
-                }}
-                className="p-1.5 hover:bg-gray-100 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label="Delete conversation"
-              >
-                <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-500" />
-              </button>
+              <div className="flex items-center gap-1">
+                {editingConversationId === conversation.id ? (
+                  <button
+                    onClick={handleSaveEdit}
+                    className="p-1.5 hover:bg-gray-100 rounded-md transition-opacity"
+                    aria-label="Save conversation title"
+                  >
+                    <Check className="w-4 h-4 text-green-500" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStartEdit(conversation);
+                    }}
+                    className="p-1.5 hover:bg-gray-100 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Edit conversation title"
+                  >
+                    <Edit3 className="w-4 h-4 text-gray-400 hover:text-blue-500" />
+                  </button>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteConversation(conversation.id);
+                  }}
+                  className="p-1.5 hover:bg-gray-100 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                  aria-label="Delete conversation"
+                >
+                  <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-500" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
