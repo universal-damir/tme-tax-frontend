@@ -39,7 +39,14 @@ const TaxChatUI = () => {
 
   const fetchConversations = async () => {
     try {
-      const userId = localStorage.getItem('userId') || '1';
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        // Redirect to login instead of using fallback userId
+        console.warn('No userId found in localStorage, redirecting to login');
+        navigate('/login');
+        return;
+      }
+      
       const response = await fetch(`${API_URL}/api/conversations`, {
         ...defaultFetchOptions,
         method: 'GET',
@@ -49,7 +56,16 @@ const TaxChatUI = () => {
         }
       });
       
-      if (!response.ok) throw new Error('Failed to fetch conversations');
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Handle unauthorized access by redirecting to login
+          localStorage.clear();
+          navigate('/login');
+          return;
+        }
+        throw new Error('Failed to fetch conversations');
+      }
+      
       const data = await response.json();
       setConversations(data);
     } catch (error) {
@@ -60,7 +76,13 @@ const TaxChatUI = () => {
 
   const fetchConversationMessages = async (conversationId) => {
     try {
-      const userId = localStorage.getItem('userId') || '1';
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        console.warn('No userId found in localStorage, redirecting to login');
+        navigate('/login');
+        return;
+      }
+      
       const response = await fetch(`${API_URL}/api/conversations/${conversationId}`, {
         ...defaultFetchOptions,
         method: 'GET',
@@ -70,7 +92,15 @@ const TaxChatUI = () => {
         }
       });
       
-      if (!response.ok) throw new Error('Failed to fetch messages');
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.clear();
+          navigate('/login');
+          return;
+        }
+        throw new Error('Failed to fetch messages');
+      }
+      
       const data = await response.json();
       setMessages(data.map(msg => ({
         sender: msg.role,
@@ -104,7 +134,12 @@ const TaxChatUI = () => {
 
   const handleDeleteConversation = async (conversationId) => {
     try {
-      const userId = localStorage.getItem('userId') || '1';
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        navigate('/login');
+        return;
+      }
+      
       const response = await fetch(`${API_URL}/api/conversations/${conversationId}`, {
         ...defaultFetchOptions,
         method: 'DELETE',
@@ -113,7 +148,16 @@ const TaxChatUI = () => {
           'Authorization': userId,
         }
       });
-      if (!response.ok) throw new Error('Failed to delete conversation');
+      
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.clear();
+          navigate('/login');
+          return;
+        }
+        throw new Error('Failed to delete conversation');
+      }
+      
       setConversations(prev => prev.filter(conv => conv.id !== conversationId));
       if (selectedConversationId === conversationId) {
         handleNewChat();
@@ -126,7 +170,12 @@ const TaxChatUI = () => {
 
   const handleEditConversation = async (conversationId, newTitle) => {
     try {
-      const userId = localStorage.getItem('userId') || '1';
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        navigate('/login');
+        return;
+      }
+      
       const response = await fetch(`${API_URL}/api/conversations/${conversationId}`, {
         ...defaultFetchOptions,
         method: 'PUT',
@@ -138,7 +187,15 @@ const TaxChatUI = () => {
           title: newTitle
         })
       });
-      if (!response.ok) throw new Error('Failed to update conversation');
+      
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.clear();
+          navigate('/login');
+          return;
+        }
+        throw new Error('Failed to update conversation');
+      }
       
       // Update the conversation in the local state
       setConversations(prev => prev.map(conv => 
@@ -183,7 +240,12 @@ const TaxChatUI = () => {
     setWaitingForFirstToken(true);
   
     try {
-      const userId = localStorage.getItem('userId') || '1';
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        navigate('/login');
+        return;
+      }
+      
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
@@ -200,6 +262,11 @@ const TaxChatUI = () => {
       });
   
       if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.clear();
+          navigate('/login');
+          return;
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
   
@@ -316,7 +383,12 @@ const TaxChatUI = () => {
   // Add this function to create a new conversation and return its id
   const handleRequireConversation = async () => {
     try {
-      const userId = localStorage.getItem('userId') || '1';
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        navigate('/login');
+        throw new Error('Authentication required');
+      }
+      
       const response = await fetch(`${API_URL}/api/conversations`, {
         ...defaultFetchOptions,
         method: 'POST',
@@ -326,7 +398,16 @@ const TaxChatUI = () => {
         },
         body: JSON.stringify({})
       });
-      if (!response.ok) throw new Error('Failed to create conversation');
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.clear();
+          navigate('/login');
+          throw new Error('Authentication required');
+        }
+        throw new Error('Failed to create conversation');
+      }
+      
       const data = await response.json();
       setSelectedConversationId(data.id);
       setConversations(prev => [...prev, data]);

@@ -78,7 +78,11 @@ const FileUpload = ({ onUploadSuccess, onUploadError, conversationId, onRequireC
     const formData = new FormData();
     formData.append('document', file);
     try {
-      const userId = localStorage.getItem('userId') || '1';
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
       const response = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
         headers: {
@@ -91,10 +95,15 @@ const FileUpload = ({ onUploadSuccess, onUploadError, conversationId, onRequireC
         credentials: 'include',
         body: formData
       });
+      
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication expired. Please log in again.');
+        }
         const errorData = await response.json();
         throw new Error(errorData.error || 'Upload failed');
       }
+      
       const result = await response.json();
       const fileInfo = {
         id: Date.now(),
