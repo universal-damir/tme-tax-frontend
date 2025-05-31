@@ -11,7 +11,7 @@ const TaxChatUI = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([{
     sender: 'assistant',
-    text: "## Welcome to TME Services Virtual Tax Assistant\n\nI'm here to help you with questions about UAE tax.\n\nYou can upload PDF, CSV, or Excel files to get personalized tax calculations and advice based on your documents.\n\nHow can I assist you today?"
+    text: "## Welcome to TME Services Virtual CIT Assistant\n\nI'm here to help you with questions about UAE Corporate Income Tax.\n\nYou can upload PDF, CSV, or Excel files to get personalized tax calculations and advice based on your documents.\n\nHow can I assist you today?"
   }]);
   const [conversations, setConversations] = useState([]);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
@@ -432,7 +432,7 @@ const TaxChatUI = () => {
       
       <div className="flex-1 flex flex-col">
         <div className="border-b px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-900">TME Services Virtual Tax Assistant</h1>
+          <h1 className="text-lg font-semibold text-gray-900">TME Services Virtual CIT Assistant</h1>
           <button
             onClick={toggleFileUpload}
             className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-colors
@@ -551,7 +551,7 @@ const TaxChatUI = () => {
               </button>
             </div>
             <p className="text-xs text-center text-gray-600 mt-2">
-              TME Services Virtual Assistant can make mistakes. Verify important information with our tax consultants.
+              TME Services Virtual CIT Assistant can make mistakes. Verify important information with our tax consultants.
             </p>
           </div>
         </div>
