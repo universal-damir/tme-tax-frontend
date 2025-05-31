@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { PlusCircle, MessageSquare, Trash2, X, PenSquare, LogOut, Edit3, Check } from 'lucide-react';
-import { format } from 'date-fns';
 
 const Sidebar = ({
   conversations = [],
@@ -151,9 +150,6 @@ const Sidebar = ({
                       </h3>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 truncate">
-                    {format(new Date(conversation.created_at), 'dd.MM.yyyy')}
-                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
