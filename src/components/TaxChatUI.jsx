@@ -653,7 +653,7 @@ const TaxChatUI = () => {
               </div>
             </div>
 
-            <div className="border-t border-gray-100 p-4 bg-white">
+            <div className="p-4 bg-white">
               <div className="max-w-3xl mx-auto">
                 <div className="relative flex items-end rounded-2xl border border-gray-200 bg-white shadow-sm focus-within:border-blue-300 focus-within:ring-1 focus-within:ring-blue-300">
                   <textarea
@@ -661,7 +661,7 @@ const TaxChatUI = () => {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Ask anything..."
+                    placeholder="Ask follow up questions or upload documents..."
                     className="flex-1 px-4 py-4 bg-transparent focus:outline-none resize-none overflow-hidden text-gray-900 placeholder-gray-400"
                     rows="1"
                     disabled={isLoading}
@@ -688,9 +688,6 @@ const TaxChatUI = () => {
                     </button>
                   </div>
                 </div>
-                <p className="text-xs text-center text-gray-400 mt-3">
-                  TME Services Virtual CIT Assistant can make mistakes. Verify important information with our tax consultants.
-                </p>
               </div>
             </div>
           </>
