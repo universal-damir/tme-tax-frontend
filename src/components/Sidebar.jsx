@@ -14,6 +14,7 @@ const Sidebar = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [editingConversationId, setEditingConversationId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -55,6 +56,21 @@ const Sidebar = ({
     }
   };
 
+  const handleDeleteClick = (conversationId) => {
+    setDeleteConfirmId(conversationId);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteConfirmId) {
+      onDeleteConversation(deleteConfirmId);
+      setDeleteConfirmId(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmId(null);
+  };
+
   return (
     <>
       {/* Mobile Menu Button - Only visible on mobile */}
@@ -77,6 +93,34 @@ const Sidebar = ({
           onClick={toggleMobileMenu}
           aria-hidden="true"
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Delete Conversation
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this conversation? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleCancelDelete}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Sidebar */}
@@ -176,7 +220,7 @@ const Sidebar = ({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDeleteConversation(conversation.id);
+                    handleDeleteClick(conversation.id);
                   }}
                   className="p-1.5 hover:bg-gray-100 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
                   aria-label="Delete conversation"
