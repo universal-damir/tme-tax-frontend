@@ -233,7 +233,7 @@ const Sidebar = ({
         </div>
 
         {/* Logout button at the bottom */}
-        <div className="p-4 border-t border-gray-200 mt-auto">
+        <div className="p-4 mt-auto">
           <button
             onClick={() => {
               onLogout();

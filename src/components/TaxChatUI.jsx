@@ -559,10 +559,6 @@ const TaxChatUI = () => {
           </div>
         )}
 
-        <div className="border-b px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-900">TME Services Virtual CIT Assistant</h1>
-        </div>
-
         {/* Show conversation view when there are messages beyond the welcome message or when conversation is selected */}
         {(messages.length > 1 || streamedMessage || waitingForFirstToken) ? (
           <>
@@ -772,7 +768,7 @@ const TaxChatUI = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Ask anything..."
+                  placeholder="Ask anything about CIT or upload documents to get started..."
                   className="flex-1 px-6 py-4 bg-transparent focus:outline-none resize-none overflow-hidden text-gray-900 placeholder-gray-400 text-base"
                   rows="1"
                   disabled={isLoading}
@@ -801,7 +797,7 @@ const TaxChatUI = () => {
               </div>
 
               <p className="text-sm text-gray-400 mt-4">
-                TME Services Virtual CIT Assistant can make mistakes. Verify important information with our tax consultants.
+                TME Services Virtual CIT Assistant can make mistakes. Verify important information.
               </p>
             </div>
 
