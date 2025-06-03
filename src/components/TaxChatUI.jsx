@@ -122,11 +122,6 @@ const TaxChatUI = () => {
     formData.append('document', file);
     
     try {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        throw new Error('Authentication required. Please log in again.');
-      }
-      
       if (!convId) {
         throw new Error('No conversation selected. Please start a conversation first.');
       }
@@ -134,7 +129,7 @@ const TaxChatUI = () => {
       const response = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
         headers: {
-          'Authorization': userId,
+          // Don't set Content-Type for FormData - let browser set it automatically
           'Accept': 'application/json',
           'Origin': window.location.origin,
           'X-Conversation-Id': convId
@@ -145,11 +140,21 @@ const TaxChatUI = () => {
       });
       
       if (!response.ok) {
-        if (response.status === 401) {
+        if (response.status === 401 || response.status === 403) {
           throw new Error('Authentication expired. Please log in again.');
         }
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
+        
+        // Try to get error details from response
+        let errorMessage = 'Upload failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const result = await response.json();
@@ -177,27 +182,21 @@ const TaxChatUI = () => {
 
   const fetchConversations = async () => {
     try {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        // Redirect to login instead of using fallback userId
-        console.warn('No userId found in localStorage, redirecting to login');
-        navigate('/login');
-        return;
-      }
+      // Authentication now handled via JWT cookies
       
       const response = await fetch(`${API_URL}/api/conversations`, {
         ...defaultFetchOptions,
         method: 'GET',
         headers: {
           ...defaultFetchOptions.headers,
-          'Authorization': userId,
+          
         }
       });
       
       if (!response.ok) {
-        if (response.status === 401) {
+        if (response.status === 401 || response.status === 403) {
           // Handle unauthorized access by redirecting to login
-          localStorage.clear();
+          
           navigate('/login');
           return;
         }
@@ -214,25 +213,20 @@ const TaxChatUI = () => {
 
   const fetchConversationMessages = async (conversationId) => {
     try {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        console.warn('No userId found in localStorage, redirecting to login');
-        navigate('/login');
-        return;
-      }
+      // Authentication now handled via JWT cookies
       
       const response = await fetch(`${API_URL}/api/conversations/${conversationId}`, {
         ...defaultFetchOptions,
         method: 'GET',
         headers: {
           ...defaultFetchOptions.headers,
-          'Authorization': userId,
+          
         }
       });
       
       if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          localStorage.clear();
+        if (response.status === 401 || response.status === 403 || response.status === 403) {
+          
           navigate('/login');
           return;
         }
@@ -272,24 +266,20 @@ const TaxChatUI = () => {
 
   const handleDeleteConversation = async (conversationId) => {
     try {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        navigate('/login');
-        return;
-      }
+      // Authentication now handled via JWT cookies
       
       const response = await fetch(`${API_URL}/api/conversations/${conversationId}`, {
         ...defaultFetchOptions,
         method: 'DELETE',
         headers: {
           ...defaultFetchOptions.headers,
-          'Authorization': userId,
+          
         }
       });
       
       if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          localStorage.clear();
+        if (response.status === 401 || response.status === 403 || response.status === 403) {
+          
           navigate('/login');
           return;
         }
@@ -308,18 +298,14 @@ const TaxChatUI = () => {
 
   const handleEditConversation = async (conversationId, newTitle) => {
     try {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        navigate('/login');
-        return;
-      }
+      // Authentication now handled via JWT cookies
       
       const response = await fetch(`${API_URL}/api/conversations/${conversationId}`, {
         ...defaultFetchOptions,
         method: 'PUT',
         headers: {
           ...defaultFetchOptions.headers,
-          'Authorization': userId,
+          
         },
         body: JSON.stringify({
           title: newTitle
@@ -327,8 +313,8 @@ const TaxChatUI = () => {
       });
       
       if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          localStorage.clear();
+        if (response.status === 401 || response.status === 403 || response.status === 403) {
+          
           navigate('/login');
           return;
         }
@@ -378,30 +364,27 @@ const TaxChatUI = () => {
     setWaitingForFirstToken(true);
   
     try {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        navigate('/login');
-        return;
-      }
+      // Authentication now handled via JWT cookies
       
       const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream',
-          'Authorization': userId
+          
         },
         mode: 'cors',
+        credentials: 'include',
         body: JSON.stringify({
-          message: input,
+          message: userMessage.text,
           conversationId: selectedConversationId,
           history: messages
         })
       });
   
       if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.clear();
+        if (response.status === 401 || response.status === 403) {
+          
           navigate('/login');
           return;
         }
@@ -480,39 +463,32 @@ const TaxChatUI = () => {
     }
   };
 
-  const handleLogout = () => {
-    // Clear all authentication data
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('username');
-    localStorage.removeItem('loginTime');
-    
-    // Redirect to login page
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      // Call backend logout endpoint to clear httpOnly cookie
+      await fetch(`${API_URL}/api/logout`, {
+        ...defaultFetchOptions,
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Redirect to login page regardless of logout API success
+      navigate('/login');
+    }
   };
 
   // Add this function to create a new conversation and return its id
   const handleRequireConversation = async () => {
     try {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        navigate('/login');
-        throw new Error('Authentication required');
-      }
-      
       const response = await fetch(`${API_URL}/api/conversations`, {
         ...defaultFetchOptions,
         method: 'POST',
-        headers: {
-          ...defaultFetchOptions.headers,
-          'Authorization': userId,
-        },
         body: JSON.stringify({})
       });
       
       if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.clear();
+        if (response.status === 401 || response.status === 403 || response.status === 403) {
           navigate('/login');
           throw new Error('Authentication required');
         }

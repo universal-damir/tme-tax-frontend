@@ -11,10 +11,24 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('isAuthenticated');
-    if (isAuthenticated === 'true') {
-      navigate('/chat');
-    }
+    // Check if user is already authenticated via token verification
+    const checkAuth = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/verify-token`, {
+          ...defaultFetchOptions,
+          method: 'GET'
+        });
+        
+        if (response.ok) {
+          navigate('/chat');
+        }
+      } catch (err) {
+        // User not authenticated, stay on login page
+        console.log('User not authenticated');
+      }
+    };
+    
+    checkAuth();
   }, [navigate]);
 
   const handleLogin = async (e) => {
@@ -22,12 +36,19 @@ const LoginPage = () => {
     setIsLoading(true);
     setError('');
 
+    // Input validation
+    if (!username.trim() || !password.trim()) {
+      setError('Please enter both username and password');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch(`${API_URL}/api/login`, {
         ...defaultFetchOptions,
         method: 'POST',
         body: JSON.stringify({
-          username,
+          username: username.trim(),
           password
         })
       });
@@ -35,17 +56,15 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('userId', data.userId);
-        localStorage.setItem('username', data.username);
-        localStorage.setItem('loginTime', Date.now().toString());
+        // JWT token is now stored in httpOnly cookie automatically
+        // No need to store anything in localStorage
         navigate('/chat');
       } else {
         setError(data.message || 'Invalid username or password');
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('An error occurred during login. Please try again.');
+      setError('Unable to connect to server. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -80,6 +99,7 @@ const LoginPage = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500"
                   disabled={isLoading}
+                  maxLength={50}
                 />
               </div>
             </div>
@@ -99,12 +119,13 @@ const LoginPage = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-gray-500 focus:border-gray-500"
                   disabled={isLoading}
+                  maxLength={100}
                 />
               </div>
             </div>
 
             {error && (
-              <div className="text-red-600 text-sm text-center" role="alert">
+              <div className="text-red-600 text-sm text-center bg-red-50 p-3 rounded-md" role="alert">
                 {error}
               </div>
             )}
@@ -113,7 +134,7 @@ const LoginPage = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-900 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 ${
+                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-900 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors ${
                   isLoading ? 'opacity-75 cursor-not-allowed' : ''
                 }`}
               >
