@@ -10,7 +10,7 @@ const TaxChatUI = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([{
     sender: 'assistant',
-    text: "# Welcome to TME Services Virtual CIT Assistant\n\nI'm here to help you with UAE Corporate Income Tax questions. Upload your documents below or ask me anything to get started."
+    text: "# Welcome to TME Services CIT Assistant\n\nI'm here to help you with UAE Corporate Income Tax questions. Upload your documents below or ask me anything to get started."
   }]);
   const [conversations, setConversations] = useState([]);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
@@ -248,7 +248,7 @@ const TaxChatUI = () => {
     setSelectedConversationId(null);
     setMessages([{
       sender: 'assistant',
-      text: "# Welcome to TME Services Virtual CIT Assistant\n\nI'm here to help you with UAE Corporate Income Tax questions. Upload your documents below or ask me anything to get started."
+      text: "# Welcome to TME Services CIT Assistant\n\nI'm here to help you with UAE Corporate Income Tax questions. Upload your documents below or ask me anything to get started."
     }]);
     setInput('');
     setStreamedMessage('');
@@ -684,7 +684,7 @@ const TaxChatUI = () => {
               {/* Welcome Message */}
               <div className="mb-12">
                 <h1 className="text-4xl font-bold text-gray-900 mb-6">
-                  Welcome to TME Services Virtual CIT Assistant
+                  Welcome to TME Services CIT Assistant
                 </h1>
                 <p className="text-lg text-gray-600 leading-relaxed">
                   I'm here to help you with UAE Corporate Income Tax questions. Upload your documents below or ask me anything to get started.
@@ -770,7 +770,7 @@ const TaxChatUI = () => {
               </div>
 
               <p className="text-sm text-gray-400 mt-4">
-                TME Services Virtual CIT Assistant can make mistakes. Verify important information.
+                TME Services CIT Assistant can make mistakes. Verify important information.
               </p>
             </div>
 

@@ -77,7 +77,7 @@ const LoginPage = () => {
           TME Services
         </h1>
         <h2 className="text-center text-lg text-gray-600 mb-8">
-          Virtual Tax Assistant
+          CIT Assistant
         </h2>
       </div>
 
@@ -145,7 +145,7 @@ const LoginPage = () => {
           
           <div className="mt-6">
             <p className="text-center text-xs text-gray-600">
-              TME Virtual Tax Assistant Login
+              TME CIT Assistant Login
             </p>
           </div>
         </div>
